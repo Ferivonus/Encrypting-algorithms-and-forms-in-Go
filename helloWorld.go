@@ -7,7 +7,12 @@ import (
 	"net/http"
 	"strings"
 	"unicode"
+
 	//"database/sql"
+
+	"database/sql"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func sayhelloName(w http.ResponseWriter, r *http.Request) {
@@ -93,25 +98,26 @@ func register(w http.ResponseWriter, r *http.Request) {
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
-		/*
-				var count int
-			err := db.QueryRow("SELECT count(*) FROM users WHERE username = ?", username).Scan(&count)
-			if err != nil {
-				http.Error(w, "Internal server error.", http.StatusInternalServerError)
-				return
-			}
-			if count > 0 {
-				http.Error(w, "Kullanıcı adı zaten alınmış.", http.StatusBadRequest)
-				return
-			}
+		db, errDatabase := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/Go database")
 
-			// add user to the database
-			_, err = db.Exec("INSERT INTO users (username, password) VALUES (?, ?)", username, password)
-			if err != nil {
-				http.Error(w, "Internal server error.", http.StatusInternalServerError)
-				return
-			}
-		*/
+		var count int
+		var err2 bool
+		count, err2 = db.QueryRow("SELECT count(*) FROM users WHERE username = ?", username).Scan(&count)
+		if errDatabase != nil {
+			http.Error(w, "Internal server error.", http.StatusInternalServerError)
+			return
+		}
+		if count > 0 {
+			http.Error(w, "Kullanıcı adı zaten alınmış.", http.StatusBadRequest)
+			return
+		}
+
+		// add user to the database
+		_, err = db.Exec("INSERT INTO users (username, password) VALUES (?, ?)", username, password)
+		if err != nil {
+			http.Error(w, "Internal server error.", http.StatusInternalServerError)
+			return
+		}
 
 		// Cookie'leri oluşturun ve kaydedin
 		cookieUsername := http.Cookie{Name: "username", Value: username}
@@ -144,6 +150,7 @@ func welcome(w http.ResponseWriter, r *http.Request) {
 	println(w, "Hoş geldin, &s! Şifren: &s", cookieUsername.Value, cookiePassword.Value)
 	t.Execute(w, nil)
 }
+
 func main() {
 
 	http.HandleFunc("/", index) // setting router rule
@@ -244,27 +251,26 @@ func Encription(w http.ResponseWriter, r *http.Request) {
         <p>Ciphertext: %s</p>
         <p>Decrypted plaintext: %s</p>
     `, plaintext, key, ciphertext, decryptedPlaintext)
-		/*
-			db, err := sql.Open("mysql", "root:password@tcp(localhost:3306)/Go database")
-			if err != nil {
-				panic(err.Error())
-			}
-			defer db.Close()
 
-			// INSERT INTO EncryptedFiles (PersonID, plaintext, key_of_plaintext, ciphertext, decryptedPlaintext) VALUES (1, 'hello world', 'my key', 'encrypted text', 'decrypted text')
-			insert, err := db.Prepare("INSERT INTO EncryptedFiles(PersonID, plaintext, key_of_plaintext, ciphertext, decryptedPlaintext) VALUES(?,?,?,?,?)")
-			if err != nil {
-				panic(err.Error())
-			}
-			defer insert.Close()
+		db, errDatabase := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/Go database")
+		if errDatabase != nil {
+			panic(err.Error())
+		}
+		defer db.Close()
 
-			_, err = insert.Exec(1, "hello world", "my key", "encrypted text", "decrypted text")
-			if err != nil {
-				panic(err.Error())
-			}
+		// INSERT INTO EncryptedFiles (PersonID, plaintext, key_of_plaintext, ciphertext, decryptedPlaintext) VALUES (1, 'hello world', 'my key', 'encrypted text', 'decrypted text')
+		insert, err := db.Prepare("INSERT INTO EncryptedFiles(PersonID, plaintext, key_of_plaintext, ciphertext, decryptedPlaintext) VALUES(?,?,?,?,?)")
+		if err != nil {
+			panic(err.Error())
+		}
+		defer insert.Close()
 
-			fmt.Println("Kayıt eklendi.")
-		*/
+		_, err = insert.Exec(1, "hello world", "my key", "encrypted text", "decrypted text")
+		if err != nil {
+			panic(err.Error())
+		}
+
+		fmt.Println("Kayıt eklendi.")
 
 	}
 
