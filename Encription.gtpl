@@ -1,11 +1,4 @@
-<html>
-    <head>
-    <title></title>
-    </head>
-    <body>
-        
-    </body>
-</html>
+
 
 <!DOCTYPE html>
 <html lang="en">

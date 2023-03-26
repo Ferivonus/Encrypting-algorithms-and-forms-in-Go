@@ -56,6 +56,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 		//check on the system if it's true:
 
+		//if true
+
 		cookieUsername := http.Cookie{Name: "username", Value: username}
 		cookiePassword := http.Cookie{Name: "password", Value: password}
 		http.SetCookie(w, &cookieUsername)
