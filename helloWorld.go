@@ -99,21 +99,25 @@ func register(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("password")
 
 		db, errDatabase := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/Go database")
-
 		var count int
-		var err2 bool
-		count, err2 = db.QueryRow("SELECT count(*) FROM users WHERE username = ?", username).Scan(&count)
+
+		errrr := db.QueryRow("SELECT count(*) FROM Users WHERE username = ?", username).Scan(&count)
+
+		if errrr != nil {
+			fmt.Println("bö")
+		}
 		if errDatabase != nil {
 			http.Error(w, "Internal server error.", http.StatusInternalServerError)
 			return
 		}
+
 		if count > 0 {
 			http.Error(w, "Kullanıcı adı zaten alınmış.", http.StatusBadRequest)
 			return
 		}
 
 		// add user to the database
-		_, err = db.Exec("INSERT INTO users (username, password) VALUES (?, ?)", username, password)
+		_, err := db.Exec("INSERT INTO Users (username, password) VALUES (?, ?)", username, password)
 		if err != nil {
 			http.Error(w, "Internal server error.", http.StatusInternalServerError)
 			return
