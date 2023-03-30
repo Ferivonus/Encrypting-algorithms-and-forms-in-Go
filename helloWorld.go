@@ -10,13 +10,9 @@ import (
 	"time"
 	"unicode"
 
-	//"database/sql"
-
 	"database/sql"
 
 	"os"
-
-	//"github.com/joho/godotenv"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -25,14 +21,6 @@ import (
 type users struct {
 	name     string
 	password string
-}
-
-func sayhelloName(w http.ResponseWriter, r *http.Request) {
-	// attention: If you do not call ParseForm method, the following data can not be obtained form
-	fmt.Println(r.Form) // print information on server side.
-	fmt.Println("path", r.URL.Path)
-	fmt.Println("scheme", r.URL.Scheme)
-	//fmt.Fprintf(w, "Hello astaxie!") // write data to response
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -58,11 +46,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		r.ParseForm()
-
-		//if there is not any particular account of user
-		fmt.Println("username:", r.Form["username"])
-		fmt.Println("password:", r.Form["password"])
-
 		//Geting information from form
 
 		var username = r.FormValue("username")
@@ -163,8 +146,6 @@ func register(w http.ResponseWriter, r *http.Request) {
 		}
 
 		db.Close()
-
-		fmt.Println(err)
 
 		// Cookie'leri oluşturun ve kaydedin
 		cookieUsername := http.Cookie{Name: "username", Value: username}
