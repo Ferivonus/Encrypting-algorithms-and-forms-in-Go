@@ -13,7 +13,7 @@
         <center>Sign me in!!</center>
         User name:<input type="text" name="username">
         Password :<input type="password" name="password">
-        <input type="submit" value="Login">
+        <input type="submit" value="register">
     </form>
 </body>
 </html>

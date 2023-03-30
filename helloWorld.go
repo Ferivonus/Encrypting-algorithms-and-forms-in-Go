@@ -1,19 +1,31 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 	"unicode"
 
 	//"database/sql"
 
 	"database/sql"
 
+	"os"
+
+	//"github.com/joho/godotenv"
+
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
+
+type users struct {
+	name     string
+	password string
+}
 
 func sayhelloName(w http.ResponseWriter, r *http.Request) {
 	// attention: If you do not call ParseForm method, the following data can not be obtained form
@@ -24,6 +36,7 @@ func sayhelloName(w http.ResponseWriter, r *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
+
 	cookieUsername, Usernameerr := r.Cookie("username")
 
 	cookiePassword, ePassworderr := r.Cookie("password")
@@ -98,30 +111,60 @@ func register(w http.ResponseWriter, r *http.Request) {
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
-		db, errDatabase := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/Go database")
-		var count int
-
-		errrr := db.QueryRow("SELECT count(*) FROM Users WHERE username = ?", username).Scan(&count)
-
-		if errrr != nil {
-			fmt.Println("bö")
+		err := godotenv.Load()
+		if err != nil {
+			fmt.Println("Error loading .env file")
 		}
-		if errDatabase != nil {
+
+		// MySQL bağlantısı için gerekli değişkenleri .env dosyasından okuyun
+		dbUser := os.Getenv("DB_USER")
+		dbPassword := os.Getenv("DB_PASSWORD")
+		dbName := os.Getenv("DB_NAME")
+		dbHost := os.Getenv("DB_HOST")
+		dbPort := os.Getenv("DB_PORT")
+
+		fmt.Println(dbUser, dbPassword, dbName, dbHost, dbPort)
+
+		dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+		db, err := sql.Open("mysql", dataSourceName)
+
+		if err != nil {
 			http.Error(w, "Internal server error.", http.StatusInternalServerError)
 			return
+		}
+
+		var count int
+
+		p := users{
+			name:     username,
+			password: password,
+		}
+
+		errrr := db.QueryRow("SELECT count(*) FROM users WHERE username = ?", username).Scan(&count)
+
+		fmt.Println(errrr)
+		if errrr != nil {
+			http.Error(w, "Internal server error.", http.StatusInternalServerError)
+			//return
 		}
 
 		if count > 0 {
 			http.Error(w, "Kullanıcı adı zaten alınmış.", http.StatusBadRequest)
 			return
+		} else {
+			fmt.Println("This account could be taken from u")
 		}
 
 		// add user to the database
-		_, err := db.Exec("INSERT INTO Users (username, password) VALUES (?, ?)", username, password)
+		err = insert(db, p)
+
 		if err != nil {
-			http.Error(w, "Internal server error.", http.StatusInternalServerError)
-			return
+			log.Printf("Insert user failed with error %s", err)
 		}
+
+		db.Close()
+
+		fmt.Println(err)
 
 		// Cookie'leri oluşturun ve kaydedin
 		cookieUsername := http.Cookie{Name: "username", Value: username}
@@ -132,6 +175,30 @@ func register(w http.ResponseWriter, r *http.Request) {
 		// Yönlendirme yapın
 		http.Redirect(w, r, "/welcome", http.StatusSeeOther)
 	}
+}
+
+func insert(db *sql.DB, p users) error {
+	query := "INSERT INTO users(username, userpassword) VALUES (?, ?)"
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelfunc()
+	stmt, err := db.PrepareContext(ctx, query)
+	if err != nil {
+		log.Printf("Error %s when preparing SQL statement", err)
+		return err
+	}
+	defer stmt.Close()
+	res, err := stmt.ExecContext(ctx, p.name, p.password)
+	if err != nil {
+		log.Printf("Error %s when inserting row into products table", err)
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("Error %s when finding rows affected", err)
+		return err
+	}
+	log.Printf("%d products created ", rows)
+	return nil
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -256,19 +323,29 @@ func Encription(w http.ResponseWriter, r *http.Request) {
         <p>Decrypted plaintext: %s</p>
     `, plaintext, key, ciphertext, decryptedPlaintext)
 
-		db, errDatabase := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/Go database")
-		if errDatabase != nil {
-			panic(err.Error())
+		// MySQL bağlantısı için gerekli değişkenleri .env dosyasından okuyun
+		dbUser := os.Getenv("DB_USER")
+		dbPassword := os.Getenv("DB_PASSWORD")
+		dbName := os.Getenv("DB_NAME")
+		dbHost := os.Getenv("DB_HOST")
+		dbPort := os.Getenv("DB_PORT")
+
+		fmt.Println(dbUser, dbPassword, dbName, dbHost, dbPort)
+
+		dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+		db, err := sql.Open("mysql", dataSourceName)
+
+		if err != nil {
+			http.Error(w, "Internal server error.", http.StatusInternalServerError)
+			return
 		}
 		defer db.Close()
 
 		// INSERT INTO EncryptedFiles (PersonID, plaintext, key_of_plaintext, ciphertext, decryptedPlaintext) VALUES (1, 'hello world', 'my key', 'encrypted text', 'decrypted text')
-		insert, err := db.Prepare("INSERT INTO EncryptedFiles(PersonID, plaintext, key_of_plaintext, ciphertext, decryptedPlaintext) VALUES(?,?,?,?,?)")
+		insert, err := db.Prepare("INSERT INTO encryptedfiles(PersonID, plaintext, key_of_plaintext, ciphertext, decryptedPlaintext) VALUES(?,?,?,?,?)")
 		if err != nil {
 			panic(err.Error())
 		}
-		defer insert.Close()
-
 		_, err = insert.Exec(1, "hello world", "my key", "encrypted text", "decrypted text")
 		if err != nil {
 			panic(err.Error())
