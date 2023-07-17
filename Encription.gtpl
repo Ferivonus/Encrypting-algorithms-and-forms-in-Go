@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +10,7 @@
     <form action="/Encription" method="post">
         plaintext:<input type="text" name="plaintext">
         key:<input type="password" name="key">
-        <input type="submit" value="Login">
+        <input type="submit" value="Record my Encription">
     </form>
 </body>
 </html>

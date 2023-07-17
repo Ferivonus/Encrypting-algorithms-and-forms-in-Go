@@ -123,7 +123,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 			password: password,
 		}
 
-		errrr := db.QueryRow("SELECT count(*) FROM users WHERE username = ?", username).Scan(&count)
+		errrr := db.QueryRow("SELECT count(*) FROM users WHERE username = ?", p.name).Scan(&count)
 
 		fmt.Println(errrr)
 		if errrr != nil {
@@ -201,21 +201,6 @@ func welcome(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.ParseFiles("welcome.gtpl")
 	println(w, "Hoş geldin, &s! Şifren: &s", cookieUsername.Value, cookiePassword.Value)
 	t.Execute(w, nil)
-}
-
-func main() {
-
-	http.HandleFunc("/", index) // setting router rule
-	http.HandleFunc("/login", login)
-	http.HandleFunc("/register", register)
-	http.HandleFunc("/welcome", welcome)
-
-	http.HandleFunc("/Encription", Encription)
-
-	var err = http.ListenAndServe(":8080", nil) // setting listening port
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
 }
 
 func encrypt(plaintext string, key string) string {
@@ -296,8 +281,8 @@ func Encription(w http.ResponseWriter, r *http.Request) {
 		ciphertext := encrypt(plaintext, key)
 		decryptedPlaintext := decrypt(ciphertext, key)
 
-		fmt.Fprintf(w, "Merhaba bay %s", cookieUsername.Value)
-		fmt.Fprintf(w, `
+		fmt.Println(w, "Merhaba bay %s", cookieUsername.Value)
+		fmt.Println(w, `
         <p>Plaintext: %s</p>
         <p>Key: %s</p>
         <p>Ciphertext: %s</p>
@@ -323,7 +308,7 @@ func Encription(w http.ResponseWriter, r *http.Request) {
 		defer db.Close()
 
 		// INSERT INTO EncryptedFiles (PersonID, plaintext, key_of_plaintext, ciphertext, decryptedPlaintext) VALUES (1, 'hello world', 'my key', 'encrypted text', 'decrypted text')
-		insert, err := db.Prepare("INSERT INTO encryptedfiles(PersonID, plaintext, key_of_plaintext, ciphertext, decryptedPlaintext) VALUES(?,?,?,?,?)")
+		insert, err := db.Prepare("INSERT INTO encryptedFiles(PersonID, plaintext, key_of_plaintext, ciphertext, decryptedPlaintext) VALUES(?,?,?,?,?)")
 		if err != nil {
 			panic(err.Error())
 		}
@@ -336,4 +321,19 @@ func Encription(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+}
+
+func main() {
+
+	http.HandleFunc("/", index) // setting router rule
+	http.HandleFunc("/login", login)
+	http.HandleFunc("/register", register)
+	http.HandleFunc("/Encription", Encription)
+	//http.HandleFunc("/EncriptionComplate", EncriptionComplate)
+	http.HandleFunc("/welcome", welcome)
+
+	var err = http.ListenAndServe(":8080", nil) // setting listening port
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
